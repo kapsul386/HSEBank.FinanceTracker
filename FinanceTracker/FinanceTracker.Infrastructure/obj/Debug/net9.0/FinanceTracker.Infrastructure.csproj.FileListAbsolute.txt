@@ -1,0 +1,16 @@
+C:\Users\ddkup\RiderProjects\HSEBank.FinanceTracker\FinanceTracker\FinanceTracker.Infrastructure\bin\Debug\net9.0\FinanceTracker.Infrastructure.deps.json
+C:\Users\ddkup\RiderProjects\HSEBank.FinanceTracker\FinanceTracker\FinanceTracker.Infrastructure\bin\Debug\net9.0\FinanceTracker.Infrastructure.dll
+C:\Users\ddkup\RiderProjects\HSEBank.FinanceTracker\FinanceTracker\FinanceTracker.Infrastructure\bin\Debug\net9.0\FinanceTracker.Infrastructure.pdb
+C:\Users\ddkup\RiderProjects\HSEBank.FinanceTracker\FinanceTracker\FinanceTracker.Infrastructure\obj\Debug\net9.0\FinanceTracker.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\ddkup\RiderProjects\HSEBank.FinanceTracker\FinanceTracker\FinanceTracker.Infrastructure\obj\Debug\net9.0\FinanceTracker.Infrastructure.AssemblyInfoInputs.cache
+C:\Users\ddkup\RiderProjects\HSEBank.FinanceTracker\FinanceTracker\FinanceTracker.Infrastructure\obj\Debug\net9.0\FinanceTracker.Infrastructure.AssemblyInfo.cs
+C:\Users\ddkup\RiderProjects\HSEBank.FinanceTracker\FinanceTracker\FinanceTracker.Infrastructure\obj\Debug\net9.0\FinanceTracker.Infrastructure.csproj.CoreCompileInputs.cache
+C:\Users\ddkup\RiderProjects\HSEBank.FinanceTracker\FinanceTracker\FinanceTracker.Infrastructure\obj\Debug\net9.0\FinanceTracker.Infrastructure.sourcelink.json
+C:\Users\ddkup\RiderProjects\HSEBank.FinanceTracker\FinanceTracker\FinanceTracker.Infrastructure\obj\Debug\net9.0\FinanceTracker.Infrastructure.dll
+C:\Users\ddkup\RiderProjects\HSEBank.FinanceTracker\FinanceTracker\FinanceTracker.Infrastructure\obj\Debug\net9.0\refint\FinanceTracker.Infrastructure.dll
+C:\Users\ddkup\RiderProjects\HSEBank.FinanceTracker\FinanceTracker\FinanceTracker.Infrastructure\obj\Debug\net9.0\FinanceTracker.Infrastructure.pdb
+C:\Users\ddkup\RiderProjects\HSEBank.FinanceTracker\FinanceTracker\FinanceTracker.Infrastructure\obj\Debug\net9.0\ref\FinanceTracker.Infrastructure.dll
+C:\Users\ddkup\RiderProjects\HSEBank.FinanceTracker\FinanceTracker\FinanceTracker.Infrastructure\bin\Debug\net9.0\FinanceTracker.Domain.dll
+C:\Users\ddkup\RiderProjects\HSEBank.FinanceTracker\FinanceTracker\FinanceTracker.Infrastructure\bin\Debug\net9.0\FinanceTracker.Domain.pdb
+C:\Users\ddkup\RiderProjects\HSEBank.FinanceTracker\FinanceTracker\FinanceTracker.Infrastructure\obj\Debug\net9.0\FinanceTracker.Infrastructure.csproj.AssemblyReference.cache
+C:\Users\ddkup\RiderProjects\HSEBank.FinanceTracker\FinanceTracker\FinanceTracker.Infrastructure\obj\Debug\net9.0\FinanceT.DB2F2188.Up2Date
