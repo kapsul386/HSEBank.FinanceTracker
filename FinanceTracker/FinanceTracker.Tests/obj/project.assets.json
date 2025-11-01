@@ -374,6 +374,7 @@
         "type": "project",
         "framework": ".NETCoreApp,Version=v9.0",
         "dependencies": {
+          "FinanceTracker.Application": "1.0.0",
           "FinanceTracker.Domain": "1.0.0"
         },
         "compile": {

@@ -1,8 +1,11 @@
 {
   "version": 2,
-  "dgSpecHash": "o3gatWbLVmE=",
+  "dgSpecHash": "W5KXcHU+Bzc=",
   "success": true,
   "projectFilePath": "C:\\Users\\ddkup\\RiderProjects\\HSEBank.FinanceTracker\\FinanceTracker\\FinanceTracker.ConsoleApp\\FinanceTracker.ConsoleApp.csproj",
-  "expectedPackageFiles": [],
+  "expectedPackageFiles": [
+    "C:\\Users\\ddkup\\.nuget\\packages\\microsoft.extensions.dependencyinjection\\9.0.10\\microsoft.extensions.dependencyinjection.9.0.10.nupkg.sha512",
+    "C:\\Users\\ddkup\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\9.0.10\\microsoft.extensions.dependencyinjection.abstractions.9.0.10.nupkg.sha512"
+  ],
   "logs": []
 }

@@ -14,3 +14,5 @@ C:\Users\ddkup\RiderProjects\HSEBank.FinanceTracker\FinanceTracker\FinanceTracke
 C:\Users\ddkup\RiderProjects\HSEBank.FinanceTracker\FinanceTracker\FinanceTracker.Infrastructure\bin\Debug\net9.0\FinanceTracker.Domain.pdb
 C:\Users\ddkup\RiderProjects\HSEBank.FinanceTracker\FinanceTracker\FinanceTracker.Infrastructure\obj\Debug\net9.0\FinanceTracker.Infrastructure.csproj.AssemblyReference.cache
 C:\Users\ddkup\RiderProjects\HSEBank.FinanceTracker\FinanceTracker\FinanceTracker.Infrastructure\obj\Debug\net9.0\FinanceT.DB2F2188.Up2Date
+C:\Users\ddkup\RiderProjects\HSEBank.FinanceTracker\FinanceTracker\FinanceTracker.Infrastructure\bin\Debug\net9.0\FinanceTracker.Application.dll
+C:\Users\ddkup\RiderProjects\HSEBank.FinanceTracker\FinanceTracker\FinanceTracker.Infrastructure\bin\Debug\net9.0\FinanceTracker.Application.pdb

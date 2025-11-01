@@ -1,4 +1,4 @@
-namespace FinanceTracker.Infrastructure.Repositories;
+namespace FinanceTracker.Application.Abstractions;
 
 public interface IReadRepository<T>
 {

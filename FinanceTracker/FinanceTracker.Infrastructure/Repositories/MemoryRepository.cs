@@ -1,3 +1,5 @@
+using FinanceTracker.Application.Abstractions;
+
 namespace FinanceTracker.Infrastructure.Repositories;
 
 public sealed class MemoryRepository<T> : IRepository<T> where T : class
