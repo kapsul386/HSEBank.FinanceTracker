@@ -11,10 +11,10 @@ public sealed class TimingCommandDecorator : ICommand
 
     public TimingCommandDecorator(ICommand inner) => _inner = inner;
 
-    public void Execute()
+    public void Run()
     {
         var sw = Stopwatch.StartNew();
-        _inner.Execute();
+        _inner.Run();
         sw.Stop();
         Console.WriteLine($"[timer] {Name} took {sw.ElapsedMilliseconds} ms");
     }

@@ -4,6 +4,8 @@ using FinanceTracker.Application.Services;
 using FinanceTracker.Domain.Entities;
 using FinanceTracker.Domain.Factories;
 using FinanceTracker.Infrastructure.Repositories;
+using FinanceTracker.Application.Commands;
+using FinanceTracker.ConsoleApp.Commands;
 
 // создаем контейнер DI
 var services = new ServiceCollection();
@@ -24,11 +26,41 @@ services.AddSingleton<OperationsService>();
 var provider = services.BuildServiceProvider();
 
 // тест: создадим счёт и выведем
-var factory = provider.GetRequiredService<IDomainFactory>();
+// получаем сервисы
 var accounts = provider.GetRequiredService<AccountsService>();
+var factory  = provider.GetRequiredService<IDomainFactory>();
 
-var account = factory.CreateBankAccount("Основной счёт", 1000);
-accounts.Add(account);
+// собираем список команд (оборачиваем в декоратор тайминга)
+List<ICommand> commands = new()
+{
+    new TimingCommandDecorator(new AddAccount(accounts, factory)),
+    new TimingCommandDecorator(new ListAccounts(accounts)),
+    new Exit() // выход не таймим — по желанию можно тоже завернуть
+};
 
-Console.WriteLine($"Создан счёт: {account.Name}, баланс {account.Balance}₽");
-Console.WriteLine($"Всего счетов: {accounts.List().Count}");
+// цикл меню
+while (true)
+{
+    Console.WriteLine("\nДоступные команды:");
+    foreach (var c in commands)
+        Console.WriteLine($" - {c.Name}: {c.Description}");
+
+    Console.Write("\n> ");
+    var input = (Console.ReadLine() ?? "").Trim();
+
+    var cmd = commands.FirstOrDefault(c => c.Name.Equals(input, StringComparison.OrdinalIgnoreCase));
+    if (cmd is null)
+    {
+        Console.WriteLine("Неизвестная команда");
+        continue;
+    }
+    var categories = provider.GetRequiredService<CategoriesService>();
+    commands.Add(new TimingCommandDecorator(new AddCategory(categories, factory)));
+    commands.Add(new TimingCommandDecorator(new ListCategories(categories)));
+
+    var ops = provider.GetRequiredService<OperationsService>();
+    commands.Add(new TimingCommandDecorator(new AddOperation(ops, accounts, categories, factory)));
+    commands.Add(new TimingCommandDecorator(new ListOperations(ops)));
+
+    cmd.Run();
+}
