@@ -1,0 +1,4 @@
+type,accountId,amount,date,categoryId,description
+Income,2cd6f88a-1f16-4bf6-a56c-d3cc908ac1b5,50000,2025-10-01,<ID_ЗАРПЛАТА>,Зарплата
+Expense,2cd6f88a-1f16-4bf6-a56c-d3cc908ac1b5,1200,2025-10-02,<ID_КАФЕ>,Кофе
+Expense,2cd6f88a-1f16-4bf6-a56c-d3cc908ac1b5,2500,2025-10-03,<ID_ЗДОРОВЬЕ>,Аптека

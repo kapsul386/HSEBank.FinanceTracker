@@ -2,18 +2,19 @@
 using FinanceTracker.Application.Abstractions;
 using FinanceTracker.Application.Services;
 using FinanceTracker.Application.Commands;
+using FinanceTracker.Application.Templates;
 using FinanceTracker.Domain.Entities;
 using FinanceTracker.Domain.Factories;
 using FinanceTracker.Infrastructure.Repositories;
 using FinanceTracker.ConsoleApp.Commands;
 
-// создаём контейнер DI
+// Создание контейнера зависимостей
 var services = new ServiceCollection();
 
-// регистрируем фабрику доменных сущностей
+// Регистрация фабрики доменных сущностей
 services.AddSingleton<IDomainFactory, DomainFactory>();
 
-// регистрируем репозитории (по типам)
+// Регистрация репозиториев (по типам)
 services.AddSingleton<IRepository<BankAccount>>(sp =>
     new MemoryRepository<BankAccount>(x => x.Id));
 services.AddSingleton<IRepository<Category>>(sp =>
@@ -21,46 +22,64 @@ services.AddSingleton<IRepository<Category>>(sp =>
 services.AddSingleton<IRepository<Operation>>(sp =>
     new MemoryRepository<Operation>(x => x.Id));
 
-// регистрируем фасады (сервисы)
+// Регистрация фасадов (сервисов)
 services.AddSingleton<AccountsService>();
 services.AddSingleton<CategoriesService>();
 services.AddSingleton<OperationsService>();
 services.AddSingleton<AnalyticsService>();
 
-// строим контейнер
+// Регистрация импортёра (Template Method)
+services.AddSingleton<OperationsCsvImporter>();
+
+// Регистрация сервиса экспорта (Visitor)
+services.AddSingleton<ExportService>();
+
+// Построение контейнера
 var provider = services.BuildServiceProvider();
 
-// получаем зависимости
+// Получение зависимостей
 var factory     = provider.GetRequiredService<IDomainFactory>();
 var accounts    = provider.GetRequiredService<AccountsService>();
 var categories  = provider.GetRequiredService<CategoriesService>();
 var operations  = provider.GetRequiredService<OperationsService>();
 var analytics   = provider.GetRequiredService<AnalyticsService>();
+var importer    = provider.GetRequiredService<OperationsCsvImporter>();
+var export      = provider.GetRequiredService<ExportService>();
 
-// создаём список команд
+// Формирование списка доступных команд
 List<ICommand> commands =
 [
-    // Accounts
+    // Работа со счетами
     new TimingCommandDecorator(new AddAccount(accounts, factory)),
     new TimingCommandDecorator(new ListAccounts(accounts)),
+    new TimingCommandDecorator(new EditAccount(accounts)),         // <- добавлено
+    new TimingCommandDecorator(new DeleteAccount(accounts)),       // <- добавлено
 
-    // Categories
+    // Работа с категориями
     new TimingCommandDecorator(new AddCategory(categories, factory)),
     new TimingCommandDecorator(new ListCategories(categories)),
+    new TimingCommandDecorator(new EditCategory(categories)),      // <- добавлено
+    new TimingCommandDecorator(new DeleteCategory(categories)),    // <- добавлено
 
-    // Operations
+    // Работа с операциями
     new TimingCommandDecorator(new AddOperation(operations, accounts, categories, factory)),
     new TimingCommandDecorator(new ListOperations(operations)),
+    new TimingCommandDecorator(new EditOperation(operations, accounts, categories)), // <- добавлено
+    new TimingCommandDecorator(new DeleteOperation(operations)),                     // <- добавлено
 
-    // Analytics
+    // Аналитические отчёты
     new TimingCommandDecorator(new ReportSummary(analytics)),
     new TimingCommandDecorator(new ReportByCategoryCommand(analytics)),
 
-    // Exit
+    // Импорт/экспорт
+    new TimingCommandDecorator(new ImportOperationsCommand(importer)),
+    new TimingCommandDecorator(new ExportOperations(export)),      // <- добавлено
+
+    // Завершение работы
     new Exit()
 ];
 
-// основной цикл приложения
+// Основной цикл приложения
 while (true)
 {
     Console.WriteLine("\nДоступные команды:");
@@ -70,7 +89,7 @@ while (true)
     Console.Write("\n> ");
     var input = (Console.ReadLine() ?? "").Trim();
 
-    var cmd = commands.FirstOrDefault(c => 
+    var cmd = commands.FirstOrDefault(c =>
         c.Name.Equals(input, StringComparison.OrdinalIgnoreCase));
 
     if (cmd is null)
