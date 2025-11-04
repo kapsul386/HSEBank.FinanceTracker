@@ -1,128 +1,86 @@
 using FinanceTracker.Application.Commands;
 using FinanceTracker.Application.Services;
+using FinanceTracker.Domain.Entities;
 
 namespace FinanceTracker.ConsoleApp.Commands;
 
 /// <summary>
-/// Редактирует категорию: имя и/или тип (Income/Expense).
-/// Команда: edit-category
+/// Command that edits a category's name by ID.
+/// NOTE: Changing <see cref="Category.Type"/> is not supported by the domain model
+/// (property is read-only). To switch type, create a new category and migrate operations.
 /// </summary>
 public sealed class EditCategory : ICommand
 {
     private readonly CategoriesService _categories;
 
+    /// <summary>Console command name.</summary>
     public string Name => "edit-category";
-    public string Description => "Переименовать категорию и/или изменить тип по Id";
+
+    /// <summary>Short description shown in the help list.</summary>
+    public string Description => "Rename a category by ID (type change not supported)";
 
     public EditCategory(CategoriesService categories)
     {
         _categories = categories;
     }
 
+    /// <summary>
+    /// Executes the command: asks for category ID and optionally renames it.
+    /// If user enters a new type, we inform that type is immutable.
+    /// </summary>
     public void Run()
     {
-        Console.Write("Id категории: ");
+        Console.Write("Category ID: ");
         var idText = Console.ReadLine();
 
         if (!Guid.TryParse(idText, out var id))
         {
-            Console.WriteLine("Ошибка: неверный формат Id.");
+            Console.WriteLine("Error: invalid ID format.");
             return;
         }
 
         var cat = _categories.Get(id);
         if (cat is null)
         {
-            Console.WriteLine("Ошибка: категория с таким Id не найдена.");
+            Console.WriteLine("Error: category not found.");
             return;
         }
 
-        // --- Имя ---
-        Console.Write($"Новое имя [{cat.Name}] (Enter — оставить без изменений): ");
+        // --- Rename ---
+        Console.Write($"New name [{cat.Name}] (press Enter to keep): ");
         var newName = Console.ReadLine();
         var nameChanged = false;
-        if (!string.IsNullOrWhiteSpace(newName) && newName!.Trim() != cat.Name)
+
+        if (!string.IsNullOrWhiteSpace(newName) && newName.Trim() != cat.Name)
         {
             try
             {
-                // Ищем доменный метод переименования
-                var rename = cat.GetType().GetMethod("Rename");
-                if (rename != null)
-                {
-                    rename.Invoke(cat, new object[] { newName! });
-                    nameChanged = true;
-                }
-                else
-                {
-                    Console.WriteLine("Предупреждение: у Category не найден метод Rename. Имя не изменено.");
-                }
+                cat.Rename(newName);
+                nameChanged = true;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка переименования: {ex.Message}");
+                Console.WriteLine($"Rename error: {ex.Message}");
                 return;
             }
         }
 
-        // --- Тип ---
-        Console.Write($"Новый тип [{cat.Type}] (Income/Expense, Enter — без изменений): ");
-        var typeText = Console.ReadLine();
-        var typeChanged = false;
-
-        if (!string.IsNullOrWhiteSpace(typeText))
+        // --- Type (immutable in current domain) ---
+        Console.Write($"New type request [{cat.Type}] (Income/Expense, press Enter to skip): ");
+        var typeInput = Console.ReadLine();
+        if (!string.IsNullOrWhiteSpace(typeInput))
         {
-            var typeStr = typeText!.Trim();
-
-            // Попробуем распарсить enum того же типа, что и свойство cat.Type
-            var typeProp = cat.GetType().GetProperty("Type");
-            if (typeProp == null)
-            {
-                Console.WriteLine("Предупреждение: у Category нет свойства Type. Тип не изменён.");
-            }
-            else
-            {
-                var enumType = typeProp.PropertyType; // ожидаем enum, например CategoryType
-                try
-                {
-                    if (Enum.TryParse(enumType, typeStr, ignoreCase: true, out var newEnum))
-                    {
-                        // Ищем один из доменных методов смены типа
-                        var candidateNames = new[] { "ChangeType", "SetType", "UpdateType" };
-                        var method = candidateNames
-                            .Select(n => cat.GetType().GetMethod(n, new[] { enumType }))
-                            .FirstOrDefault(m => m != null);
-
-                        if (method != null)
-                        {
-                            method!.Invoke(cat, new[] { newEnum! });
-                            typeChanged = true;
-                        }
-                        else
-                        {
-                            Console.WriteLine("Предупреждение: метод смены типа не найден (ChangeType/SetType/UpdateType). Тип не изменён.");
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine("Ошибка: допустимые значения типа — Income или Expense.");
-                        return;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Ошибка смены типа: {ex.Message}");
-                    return;
-                }
-            }
+            Console.WriteLine("Notice: changing category type is not supported by the domain model.");
+            Console.WriteLine("Create a new category with the desired type and migrate operations if needed.");
         }
 
-        if (!nameChanged && !typeChanged)
+        if (!nameChanged)
         {
-            Console.WriteLine("Изменений не внесено.");
+            Console.WriteLine("No changes made.");
             return;
         }
 
         _categories.Update(cat);
-        Console.WriteLine("OK: категория обновлена.");
+        Console.WriteLine("Category updated successfully.");
     }
 }

@@ -4,39 +4,52 @@ using FinanceTracker.Application.Templates;
 namespace FinanceTracker.ConsoleApp.Commands;
 
 /// <summary>
-/// Импорт счетов из CSV. Формат: name,balance
+/// Command that imports accounts from a CSV file.
+/// Expected format: <c>name,balance</c>.
+/// Command: <c>import-accounts</c>.
 /// </summary>
 public sealed class ImportAccounts : ICommand
 {
     private readonly AccountsCsvImporter _importer;
 
+    /// <summary>Console command name.</summary>
     public string Name => "import-accounts";
-    public string Description => "Импорт счетов из CSV (формат: name,balance)";
+
+    /// <summary>Short description shown in the help list.</summary>
+    public string Description => "Import accounts from a CSV file (format: name,balance)";
 
     public ImportAccounts(AccountsCsvImporter importer)
     {
         _importer = importer;
     }
 
+    /// <summary>
+    /// Executes the command:
+    /// <list type="number">
+    /// <item>Asks for the CSV file path.</item>
+    /// <item>Validates input and runs the import process.</item>
+    /// <item>Reports success or displays an error message.</item>
+    /// </list>
+    /// </summary>
     public void Run()
     {
-        Console.Write("Введите путь к CSV (например: data/accounts.csv): ");
+        Console.Write("Enter CSV file path (e.g., data/accounts.csv): ");
         var path = (Console.ReadLine() ?? "").Trim();
 
         if (string.IsNullOrWhiteSpace(path))
         {
-            Console.WriteLine("Путь не указан.");
+            Console.WriteLine("Error: file path not specified.");
             return;
         }
 
         try
         {
             _importer.Import(path);
-            Console.WriteLine("OK: импорт счетов выполнен.");
+            Console.WriteLine("OK: accounts imported successfully.");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Ошибка импорта: {ex.Message}");
+            Console.WriteLine($"Import error: {ex.Message}");
         }
     }
 }

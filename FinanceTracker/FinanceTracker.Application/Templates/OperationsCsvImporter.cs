@@ -5,9 +5,19 @@ using FinanceTracker.Domain.Factories;
 
 namespace FinanceTracker.Application.Templates;
 
+/// <summary>
+/// CSV importer for <see cref="Operation"/> entities.
+/// Implements the <b>Template Method</b> pattern by extending
+/// <see cref="ImportTemplate{TRow, TEntity}"/>.
+/// </summary>
 public sealed class OperationsCsvImporter
     : ImportTemplate<OperationsCsvImporter.Row, Operation>
 {
+    /// <summary>
+    /// Strongly-typed representation of a parsed CSV row.
+    /// Expected columns (comma-separated):
+    /// <c>type,accountId,amount,date,categoryId,description?</c>
+    /// </summary>
     public sealed record Row(
         MoneyFlowType Type,
         Guid AccountId,
@@ -21,6 +31,9 @@ public sealed class OperationsCsvImporter
     private readonly CategoriesService _categories;
     private readonly IDomainFactory _factory;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="OperationsCsvImporter"/> class.
+    /// </summary>
     public OperationsCsvImporter(
         IRepository<Operation> opsRepo,
         AccountsService accounts,
@@ -33,6 +46,10 @@ public sealed class OperationsCsvImporter
         _factory = factory;
     }
 
+    /// <summary>
+    /// Parses a raw CSV line into a <see cref="Row"/>.
+    /// Expected columns: <c>type,accountId,amount,date,categoryId,description?</c>.
+    /// </summary>
     protected override bool TryParse(string raw, out Row row)
     {
         row = default!;
@@ -46,12 +63,19 @@ public sealed class OperationsCsvImporter
         if (!DateOnly.TryParse(parts[3], out var date)) return false;
         if (!Guid.TryParse(parts[4], out var categoryId)) return false;
 
-        var desc = parts.Length >= 6 ? (string.IsNullOrWhiteSpace(parts[5]) ? null : parts[5]) : null;
+        var desc = parts.Length >= 6
+            ? (string.IsNullOrWhiteSpace(parts[5]) ? null : parts[5])
+            : null;
 
         row = new Row(type, accountId, amount, date, categoryId, desc);
         return true;
-    }
+        }
 
+    /// <summary>
+    /// Validates domain constraints for a parsed row:
+    /// - Amount must be positive
+    /// - Account and Category must exist
+    /// </summary>
     protected override bool Validate(Row row)
     {
         if (row.Amount <= 0) return false;
@@ -60,9 +84,15 @@ public sealed class OperationsCsvImporter
         return true;
     }
 
+    /// <summary>
+    /// Maps a valid row into a domain <see cref="Operation"/> using the factory.
+    /// </summary>
     protected override Operation Map(Row row) =>
         _factory.CreateOperation(
             row.Type, row.AccountId, row.Amount, row.Date, row.CategoryId, row.Description);
 
+    /// <summary>
+    /// Persists the created entity into the repository.
+    /// </summary>
     protected override void Save(Operation entity) => _opsRepo.Add(entity);
 }

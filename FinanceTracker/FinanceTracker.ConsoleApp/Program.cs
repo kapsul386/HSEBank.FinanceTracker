@@ -1,56 +1,48 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+
 using FinanceTracker.Application.Abstractions;
 using FinanceTracker.Application.Services;
+using FinanceTracker.Application.Services.ReportSort;
 using FinanceTracker.Application.Commands;
 using FinanceTracker.Application.Templates;
+
 using FinanceTracker.Domain.Entities;
 using FinanceTracker.Domain.Factories;
+
 using FinanceTracker.Infrastructure.Repositories;
+
 using FinanceTracker.ConsoleApp.Commands;
-using FinanceTracker.Application.Services.ReportSort;         
-using FinanceTracker.Application.Templates;   // AccountsCsvImporter
-using FinanceTracker.ConsoleApp.Commands;    // ImportAccountsCommand
-// DI-контейнер
-// ------------------------------
+
+
+
 var services = new ServiceCollection();
 
-// Фабрика доменных сущностей
 services.AddSingleton<IDomainFactory, DomainFactory>();
 
-// Репозитории + Proxy (кэширующий прокси над памятью)
-services.AddSingleton<IRepository<BankAccount>>(sp =>
+services.AddSingleton<IRepository<BankAccount>>(_ =>
     new CachedRepositoryProxy<BankAccount>(
         new MemoryRepository<BankAccount>(x => x.Id), x => x.Id));
 
-services.AddSingleton<IRepository<Category>>(sp =>
+services.AddSingleton<IRepository<Category>>(_ =>
     new CachedRepositoryProxy<Category>(
         new MemoryRepository<Category>(x => x.Id), x => x.Id));
 
-services.AddSingleton<IRepository<Operation>>(sp =>
+services.AddSingleton<IRepository<Operation>>(_ =>
     new CachedRepositoryProxy<Operation>(
         new MemoryRepository<Operation>(x => x.Id), x => x.Id));
 
-// Фасады/сервисы
 services.AddSingleton<AccountsService>();
 services.AddSingleton<CategoriesService>();
 services.AddSingleton<OperationsService>();
 services.AddSingleton<AnalyticsService>();
 services.AddSingleton<ExportService>();
 services.AddSingleton<AccountsCsvImporter>();
-
-// Импорт (Template Method)
 services.AddSingleton<OperationsCsvImporter>();
-
-// Strategy для сортировки отчёта по категориям
 services.AddSingleton<IReportSortStrategy, AmountDescSort>();
 services.AddSingleton<IReportSortStrategy, NameAscSort>();
+var provider = services.BuildServiceProvider();
 
-// ------------------------------
-// Построение контейнера и получение сервисов
-// ------------------------------
-var provider  = services.BuildServiceProvider();
 var importAccounts = provider.GetRequiredService<AccountsCsvImporter>();
-
 
 var factory    = provider.GetRequiredService<IDomainFactory>();
 var accounts   = provider.GetRequiredService<AccountsService>();
@@ -60,35 +52,31 @@ var analytics  = provider.GetRequiredService<AnalyticsService>();
 var importer   = provider.GetRequiredService<OperationsCsvImporter>();
 var export     = provider.GetRequiredService<ExportService>();
 var strategies = provider.GetServices<IReportSortStrategy>();
-
-// ------------------------------
-// Регистрация команд
-// ------------------------------
 List<ICommand> commands =
 [
-    // Счета
+    // Accounts
     new TimingCommandDecorator(new AddAccount(accounts, factory)),
     new TimingCommandDecorator(new ListAccounts(accounts)),
     new TimingCommandDecorator(new EditAccount(accounts)),
     new TimingCommandDecorator(new DeleteAccount(accounts)),
 
-    // Категории
+    // Categories
     new TimingCommandDecorator(new AddCategory(categories, factory)),
     new TimingCommandDecorator(new ListCategories(categories)),
     new TimingCommandDecorator(new EditCategory(categories)),
     new TimingCommandDecorator(new DeleteCategory(categories)),
 
-    // Операции
+    // Operations
     new TimingCommandDecorator(new AddOperation(operations, accounts, categories, factory)),
     new TimingCommandDecorator(new ListOperations(operations)),
     new TimingCommandDecorator(new EditOperation(operations, accounts, categories)),
     new TimingCommandDecorator(new DeleteOperation(operations)),
 
-    // Аналитика
+    // Analytics
     new TimingCommandDecorator(new ReportSummary(analytics)),
     new TimingCommandDecorator(new ReportByCategory(analytics, categories, strategies)),
 
-    // Импорт / Экспорт (CSV)
+    // Import / Export (CSV)
     new TimingCommandDecorator(new ImportOperations(importer)),
     new TimingCommandDecorator(new ImportAccounts(importAccounts)),
 
@@ -96,19 +84,16 @@ List<ICommand> commands =
     new TimingCommandDecorator(new ExportAccounts(accounts)),
     new TimingCommandDecorator(new ExportCategories(categories)),
 
-    // Управление данными
+    // Data maintenance
     new TimingCommandDecorator(new RecalculateBalance(accounts, operations, categories)),
 
-    // Завершение
+    // Exit
     new Exit()
 ];
 
-// ------------------------------
-// Главный цикл
-// ------------------------------
 while (true)
 {
-    Console.WriteLine("\nДоступные команды:");
+    Console.WriteLine("\nAvailable commands:");
     foreach (var c in commands)
         Console.WriteLine($" - {c.Name}: {c.Description}");
 
@@ -120,7 +105,7 @@ while (true)
 
     if (cmd is null)
     {
-        Console.WriteLine("Неизвестная команда");
+        Console.WriteLine("Unknown command");
         continue;
     }
 
@@ -130,6 +115,6 @@ while (true)
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Ошибка: {ex.Message}");
+        Console.WriteLine($"Error: {ex.Message}");
     }
 }

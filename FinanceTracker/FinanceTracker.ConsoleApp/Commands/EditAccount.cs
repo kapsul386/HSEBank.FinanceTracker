@@ -1,112 +1,118 @@
 using FinanceTracker.Application.Commands;
 using FinanceTracker.Application.Services;
-using FinanceTracker.Domain.Entities; // для BankAccount
 
 namespace FinanceTracker.ConsoleApp.Commands;
 
 /// <summary>
-/// Редактирует счёт: имя и/или баланс по Id.
-/// Команда: edit-account
+/// Command that edits a bank account's name and/or balance by ID.
+/// Implements the <b>Command</b> pattern — encapsulates a single user action.
 /// </summary>
 public sealed class EditAccount : ICommand
 {
     private readonly AccountsService _accounts;
 
+    /// <summary>
+    /// Console command name.
+    /// </summary>
     public string Name => "edit-account";
-    public string Description => "Переименовать счёт и/или обновить баланс по Id";
 
+    /// <summary>
+    /// Short description displayed in the help list.
+    /// </summary>
+    public string Description => "Rename an account and/or update its balance by ID";
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="EditAccount"/> command.
+    /// </summary>
     public EditAccount(AccountsService accounts)
     {
         _accounts = accounts;
     }
 
+    /// <summary>
+    /// Executes the command: asks for account ID, optionally renames it and adjusts balance.
+    /// </summary>
     public void Run()
     {
-        Console.Write("Id счёта: ");
+        Console.Write("Account ID: ");
         var idText = Console.ReadLine();
 
         if (!Guid.TryParse(idText, out var id))
         {
-            Console.WriteLine("Ошибка: неверный формат Id.");
+            Console.WriteLine("Error: invalid ID format.");
             return;
         }
 
         var acc = _accounts.Get(id);
         if (acc is null)
         {
-            Console.WriteLine("Ошибка: счёт с таким Id не найден.");
+            Console.WriteLine("Error: account not found.");
             return;
         }
 
-        // --- Имя ---
-        Console.Write($"Новое имя [{acc.Name}] (Enter — оставить без изменений): ");
+        // --- Name update ---
+        Console.Write($"New name [{acc.Name}] (press Enter to keep): ");
         var newName = Console.ReadLine();
         var nameChanged = false;
-        if (!string.IsNullOrWhiteSpace(newName) && newName!.Trim() != acc.Name)
+
+        if (!string.IsNullOrWhiteSpace(newName) && newName.Trim() != acc.Name)
         {
-            // В домене у категорий есть Rename(...); у счёта — та же логика.
-            // Если метода Rename у BankAccount нет — скажи, сделаем быстро.
             try
             {
-                // метод домена, который меняет Name с валидацией
-                var rename = acc.GetType().GetMethod("Rename");
-                if (rename != null)
-                {
-                    rename.Invoke(acc, new object[] { newName! });
-                    nameChanged = true;
-                }
-                else
-                {
-                    Console.WriteLine("Предупреждение: метод Rename не найден у BankAccount. Имя не изменено.");
-                }
+                acc.Rename(newName);
+                nameChanged = true;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка переименования: {ex.Message}");
+                Console.WriteLine($"Rename error: {ex.Message}");
                 return;
             }
         }
 
-        // --- Баланс ---
-        Console.Write($"Новый баланс [{acc.Balance}] (Enter — оставить без изменений): ");
+        // --- Balance update ---
+        Console.Write($"New balance [{acc.Balance}] (press Enter to keep): ");
         var balText = Console.ReadLine();
         var balanceChanged = false;
+
         if (!string.IsNullOrWhiteSpace(balText))
         {
-            if (!decimal.TryParse(balText, out var newBal))
+            if (!decimal.TryParse(balText, out var newBalance))
             {
-                Console.WriteLine("Ошибка: баланс должен быть числом.");
+                Console.WriteLine("Error: balance must be a number.");
                 return;
             }
 
-            var delta = newBal - acc.Balance;
+            var delta = newBalance - acc.Balance;
+
             try
             {
-                if (delta > 0)
+                if (delta > 0m)
                 {
-                    acc.Credit(delta);   // пополнение
+                    // Increase balance via domain method (credit)
+                    acc.Credit(delta);
                     balanceChanged = true;
                 }
-                else if (delta < 0)
+                else if (delta < 0m)
                 {
-                    acc.Debit(-delta);   // списание
+                    // Decrease balance via domain method (debit)
+                    acc.Debit(-delta);
                     balanceChanged = true;
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка изменения баланса: {ex.Message}");
+                Console.WriteLine($"Balance update error: {ex.Message}");
                 return;
             }
         }
 
         if (!nameChanged && !balanceChanged)
         {
-            Console.WriteLine("Изменений не внесено.");
+            Console.WriteLine("No changes made.");
             return;
         }
 
         _accounts.Update(acc);
-        Console.WriteLine("OK: счёт обновлён.");
+        Console.WriteLine("Account updated successfully.");
     }
 }

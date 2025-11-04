@@ -4,62 +4,71 @@ using FinanceTracker.Application.Services;
 namespace FinanceTracker.ConsoleApp.Commands;
 
 /// <summary>
-/// Удаляет операцию по Id.
-/// Команда: delete-operation
+/// Command that deletes a financial operation by its ID.
+/// Implements the <b>Command</b> design pattern — encapsulates a single user action.
 /// </summary>
 public sealed class DeleteOperation : ICommand
 {
     private readonly OperationsService _operations;
 
+    /// <summary>
+    /// Console command name.
+    /// </summary>
     public string Name => "delete-operation";
-    public string Description => "Удалить операцию по Id";
 
+    /// <summary>
+    /// Short description displayed in the help list.
+    /// </summary>
+    public string Description => "Delete an operation by ID";
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DeleteOperation"/> command.
+    /// </summary>
+    /// <param name="operations">Service responsible for managing operations.</param>
     public DeleteOperation(OperationsService operations)
     {
         _operations = operations;
     }
 
+    /// <summary>
+    /// Executes the command: requests an operation ID, confirms, and deletes it.
+    /// </summary>
     public void Run()
     {
-        Console.Write("Id операции для удаления: ");
+        Console.Write("Enter operation ID to delete: ");
         var idText = Console.ReadLine();
 
         if (!Guid.TryParse(idText, out var id))
         {
-            Console.WriteLine("Ошибка: неверный формат Id.");
+            Console.WriteLine("Error: invalid ID format.");
             return;
         }
 
         var op = _operations.Get(id);
         if (op is null)
         {
-            Console.WriteLine("Ошибка: операция не найдена.");
+            Console.WriteLine("Error: operation not found.");
             return;
         }
 
-        Console.Write($"Вы уверены, что хотите удалить операцию на сумму {GetAmount(op)} от {GetDate(op):yyyy-MM-dd}? (y/n): ");
+        Console.Write(
+            $"Are you sure you want to delete the operation of {op.Amount} ({op.Type}) dated {op.Date:yyyy-MM-dd}? (y/n): ");
         var confirm = Console.ReadLine()?.Trim().ToLowerInvariant();
+
         if (confirm != "y")
         {
-            Console.WriteLine("Отменено пользователем.");
+            Console.WriteLine("Operation cancelled by user.");
             return;
         }
 
         try
         {
             _operations.Delete(id);
-            Console.WriteLine("OK: операция удалена.");
+            Console.WriteLine("Operation deleted successfully.");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Ошибка при удалении: {ex.Message}");
+            Console.WriteLine($"Error while deleting: {ex.Message}");
         }
     }
-
-    // Подсказки пользователю в подтверждении
-    private static decimal GetAmount(object op)
-        => op.GetType().GetProperty("Amount")?.GetValue(op) is decimal v ? v : 0m;
-
-    private static DateTime GetDate(object op)
-        => op.GetType().GetProperty("Date")?.GetValue(op) is DateTime v ? v : DateTime.MinValue;
 }
