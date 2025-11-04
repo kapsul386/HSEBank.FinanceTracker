@@ -7,79 +7,105 @@ using FinanceTracker.Domain.Entities;
 using FinanceTracker.Domain.Factories;
 using FinanceTracker.Infrastructure.Repositories;
 using FinanceTracker.ConsoleApp.Commands;
-
-// Создание контейнера зависимостей
+using FinanceTracker.Application.Services.ReportSort;         
+using FinanceTracker.Application.Templates;   // AccountsCsvImporter
+using FinanceTracker.ConsoleApp.Commands;    // ImportAccountsCommand
+// DI-контейнер
+// ------------------------------
 var services = new ServiceCollection();
 
-// Регистрация фабрики доменных сущностей
+// Фабрика доменных сущностей
 services.AddSingleton<IDomainFactory, DomainFactory>();
 
-// Регистрация репозиториев (по типам)
+// Репозитории + Proxy (кэширующий прокси над памятью)
 services.AddSingleton<IRepository<BankAccount>>(sp =>
-    new MemoryRepository<BankAccount>(x => x.Id));
-services.AddSingleton<IRepository<Category>>(sp =>
-    new MemoryRepository<Category>(x => x.Id));
-services.AddSingleton<IRepository<Operation>>(sp =>
-    new MemoryRepository<Operation>(x => x.Id));
+    new CachedRepositoryProxy<BankAccount>(
+        new MemoryRepository<BankAccount>(x => x.Id), x => x.Id));
 
-// Регистрация фасадов (сервисов)
+services.AddSingleton<IRepository<Category>>(sp =>
+    new CachedRepositoryProxy<Category>(
+        new MemoryRepository<Category>(x => x.Id), x => x.Id));
+
+services.AddSingleton<IRepository<Operation>>(sp =>
+    new CachedRepositoryProxy<Operation>(
+        new MemoryRepository<Operation>(x => x.Id), x => x.Id));
+
+// Фасады/сервисы
 services.AddSingleton<AccountsService>();
 services.AddSingleton<CategoriesService>();
 services.AddSingleton<OperationsService>();
 services.AddSingleton<AnalyticsService>();
+services.AddSingleton<ExportService>();
+services.AddSingleton<AccountsCsvImporter>();
 
-// Регистрация импортёра (Template Method)
+// Импорт (Template Method)
 services.AddSingleton<OperationsCsvImporter>();
 
-// Регистрация сервиса экспорта (Visitor)
-services.AddSingleton<ExportService>();
+// Strategy для сортировки отчёта по категориям
+services.AddSingleton<IReportSortStrategy, AmountDescSort>();
+services.AddSingleton<IReportSortStrategy, NameAscSort>();
 
-// Построение контейнера
-var provider = services.BuildServiceProvider();
+// ------------------------------
+// Построение контейнера и получение сервисов
+// ------------------------------
+var provider  = services.BuildServiceProvider();
+var importAccounts = provider.GetRequiredService<AccountsCsvImporter>();
 
-// Получение зависимостей
-var factory     = provider.GetRequiredService<IDomainFactory>();
-var accounts    = provider.GetRequiredService<AccountsService>();
-var categories  = provider.GetRequiredService<CategoriesService>();
-var operations  = provider.GetRequiredService<OperationsService>();
-var analytics   = provider.GetRequiredService<AnalyticsService>();
-var importer    = provider.GetRequiredService<OperationsCsvImporter>();
-var export      = provider.GetRequiredService<ExportService>();
 
-// Формирование списка доступных команд
+var factory    = provider.GetRequiredService<IDomainFactory>();
+var accounts   = provider.GetRequiredService<AccountsService>();
+var categories = provider.GetRequiredService<CategoriesService>();
+var operations = provider.GetRequiredService<OperationsService>();
+var analytics  = provider.GetRequiredService<AnalyticsService>();
+var importer   = provider.GetRequiredService<OperationsCsvImporter>();
+var export     = provider.GetRequiredService<ExportService>();
+var strategies = provider.GetServices<IReportSortStrategy>();
+
+// ------------------------------
+// Регистрация команд
+// ------------------------------
 List<ICommand> commands =
 [
-    // Работа со счетами
+    // Счета
     new TimingCommandDecorator(new AddAccount(accounts, factory)),
     new TimingCommandDecorator(new ListAccounts(accounts)),
-    new TimingCommandDecorator(new EditAccount(accounts)),         // <- добавлено
-    new TimingCommandDecorator(new DeleteAccount(accounts)),       // <- добавлено
+    new TimingCommandDecorator(new EditAccount(accounts)),
+    new TimingCommandDecorator(new DeleteAccount(accounts)),
 
-    // Работа с категориями
+    // Категории
     new TimingCommandDecorator(new AddCategory(categories, factory)),
     new TimingCommandDecorator(new ListCategories(categories)),
-    new TimingCommandDecorator(new EditCategory(categories)),      // <- добавлено
-    new TimingCommandDecorator(new DeleteCategory(categories)),    // <- добавлено
+    new TimingCommandDecorator(new EditCategory(categories)),
+    new TimingCommandDecorator(new DeleteCategory(categories)),
 
-    // Работа с операциями
+    // Операции
     new TimingCommandDecorator(new AddOperation(operations, accounts, categories, factory)),
     new TimingCommandDecorator(new ListOperations(operations)),
-    new TimingCommandDecorator(new EditOperation(operations, accounts, categories)), // <- добавлено
-    new TimingCommandDecorator(new DeleteOperation(operations)),                     // <- добавлено
+    new TimingCommandDecorator(new EditOperation(operations, accounts, categories)),
+    new TimingCommandDecorator(new DeleteOperation(operations)),
 
-    // Аналитические отчёты
+    // Аналитика
     new TimingCommandDecorator(new ReportSummary(analytics)),
-    new TimingCommandDecorator(new ReportByCategoryCommand(analytics)),
+    new TimingCommandDecorator(new ReportByCategory(analytics, categories, strategies)),
 
-    // Импорт/экспорт
-    new TimingCommandDecorator(new ImportOperationsCommand(importer)),
-    new TimingCommandDecorator(new ExportOperations(export)),      // <- добавлено
+    // Импорт / Экспорт (CSV)
+    new TimingCommandDecorator(new ImportOperations(importer)),
+    new TimingCommandDecorator(new ImportAccounts(importAccounts)),
 
-    // Завершение работы
+    new TimingCommandDecorator(new ExportOperations(export)),
+    new TimingCommandDecorator(new ExportAccounts(accounts)),
+    new TimingCommandDecorator(new ExportCategories(categories)),
+
+    // Управление данными
+    new TimingCommandDecorator(new RecalculateBalance(accounts, operations, categories)),
+
+    // Завершение
     new Exit()
 ];
 
-// Основной цикл приложения
+// ------------------------------
+// Главный цикл
+// ------------------------------
 while (true)
 {
     Console.WriteLine("\nДоступные команды:");

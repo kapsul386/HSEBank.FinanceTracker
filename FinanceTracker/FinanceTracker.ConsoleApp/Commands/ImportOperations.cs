@@ -3,14 +3,14 @@ using FinanceTracker.Application.Templates;
 
 namespace FinanceTracker.ConsoleApp.Commands;
 
-public sealed class ImportOperationsCommand : ICommand
+public sealed class ImportOperations : ICommand
 {
     private readonly OperationsCsvImporter _importer;
 
     public string Name => "import-operations";
     public string Description => "Импорт операций из CSV (type,accountId,amount,date,categoryId,description)";
 
-    public ImportOperationsCommand(OperationsCsvImporter importer) => _importer = importer;
+    public ImportOperations(OperationsCsvImporter importer) => _importer = importer;
 
     public void Run()
     {
